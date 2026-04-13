@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlanGym Dashboard</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calendario.css') }}">
+</head>
+<body>
+
+<div class="app">
+
+    <aside class="sidebar">
+        <div class="logo"><span>Plan</span>Gym</div>
+
+        <nav>
+            <button class="nav-item active" onclick="showPage('inicio', this)">Inicio</button>
+            <button class="nav-item" onclick="showPage('rutinas', this)">Rutinas</button>
+            <button class="nav-item" onclick="showPage('calendario', this)">Calendario</button>
+            <button class="nav-item" onclick="showPage('ejercicios', this)">Ejercicios</button>
+        </nav>
+
+        <div class="user-box">
+            <div class="avatar">JD</div>
+            <span>Juan García</span>
+        </div>
+    </aside>
+
+    <main class="main">
+
+        <header class="topbar">
+            <h1 id="page-title">Inicio</h1>
+            <p>Lunes, 13 de abril de 2026</p>
+        </header>
+
+        <section class="content">
+
+            <!-- INICIO -->
+            <div class="page active" id="page-inicio">
+                <div class="stats">
+                    <div class="card">
+                        <span>Entrenamientos</span>
+                        <h2>12</h2>
+                    </div>
+                    <div class="card">
+                        <span>Racha</span>
+                        <h2>4</h2>
+                    </div>
+                    <div class="card">
+                        <span>Rutina activa</span>
+                        <h2 id="rutina-activa-nombre">Push Pull Legs</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RUTINAS -->
+            <div class="page" id="page-rutinas">
+
+                <div class="panel">
+                    <h3>Nueva rutina</h3>
+
+                    <input type="text" id="nombre-rutina" placeholder="Nombre de la rutina">
+
+                    <div id="ejercicios-selector" class="chips"></div>
+
+                    <button onclick="crearRutina()">Crear rutina</button>
+                </div>
+
+                <div class="panel">
+                    <h3>Mis rutinas</h3>
+                    <div id="rutinas-container"></div>
+                </div>
+
+            </div>
+
+            <!-- CALENDARIO -->
+            <div class="page" id="page-calendario">
+
+                <div class="panel">
+                    <h3>Abril 2026</h3>
+
+                    <div class="calendar-grid" id="calendar-grid"></div>
+
+                    <button class="complete-btn" onclick="marcarDiaCompletado()">
+                        Marcar como completado
+                    </button>
+                    <button class="macros-btn">
+                        Contar macros
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- EJERCICIOS -->
+            <div class="page" id="page-ejercicios">
+                <div class="panel">
+                    <h3>Catálogo de ejercicios</h3>
+                    <div class="chips" id="catalogo-ejercicios"></div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/calendario.js') }}"></script>
+</body>
+</html>
