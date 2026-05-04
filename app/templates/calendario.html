@@ -21,9 +21,12 @@
         </nav>
 
         <div class="user-box">
-            <div class="avatar">JD</div>
-            <span>Juan García</span>
+            <div class="avatar">{{ nombre[0] | upper }}</div>
+            <span>{{ nombre }}</span>
         </div>
+        <a href="/auth/logout" style="color:#888; font-size:0.85rem; text-align:center; margin-top:8px; display:block;">
+            Cerrar sesión
+        </a>
     </aside>
 
     <main class="main">
