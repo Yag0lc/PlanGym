@@ -6,6 +6,8 @@ from database.db import db
 from models.usuario_db import Usuario
 from models.rutina_db import Rutina
 from models.ejercicio_db import RutinaEjercicio
+from routes.rutinas_routes import rutinas_bp
+
 app = Flask(__name__)
 
 # === CONFIGURACIÓN DE SESIÓN ===
@@ -28,6 +30,9 @@ db.init_app(app)
 # === BLUEPRINTS ===
 from routes.auth import auth_bp
 app.register_blueprint(auth_bp)
+app.register_blueprint(rutinas_bp)
+
+
 
 # === MODELOS ===
 from models.usuario_db import Usuario
