@@ -2,11 +2,14 @@ import os
 from flask import Flask, render_template, session, redirect, url_for
 from flask_session import Session
 from database.db import db
-
+from routes.perfil_routes import perfil_bp
 from models.usuario_db import Usuario
 from models.rutina_db import Rutina
 from models.ejercicio_db import RutinaEjercicio
 from routes.rutinas_routes import rutinas_bp
+from models.calendario_db import DiaCompletado
+from routes.calendario_routes import calendario_bp
+
 
 app = Flask(__name__)
 
@@ -31,7 +34,8 @@ db.init_app(app)
 from routes.auth import auth_bp
 app.register_blueprint(auth_bp)
 app.register_blueprint(rutinas_bp)
-
+app.register_blueprint(calendario_bp)
+app.register_blueprint(perfil_bp)
 
 
 # === MODELOS ===

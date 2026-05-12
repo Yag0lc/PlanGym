@@ -1,0 +1,100 @@
+{
+	"info": {
+		"name": "plangym",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "register",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{ "key": "nombre", "value": "Yago" },
+						{ "key": "email", "value": "Yago@test.com" },
+						{ "key": "password", "value": "123456" }
+					]
+				},
+				"url": "http://localhost:8080/auth/register"
+			}
+		},
+		{
+			"name": "login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{ "key": "email", "value": "Yago@test.com" },
+						{ "key": "password", "value": "123456" }
+					]
+				},
+				"url": "http://localhost:8080/auth/login"
+			}
+		},
+		{
+			"name": "login wrong password",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{ "key": "email", "value": "Yago@test.com" },
+						{ "key": "password", "value": "mal" }
+					]
+				},
+				"url": "http://localhost:8080/auth/login"
+			}
+		},
+		{
+			"name": "crear rutina",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"nombre\": \"Push Day\", \"ejercicios\": [\"Press banca\", \"Press militar\"]}"
+				},
+				"url": "http://localhost:8080/rutinas/crear"
+			}
+		},
+		{
+			"name": "listar rutinas",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:8080/rutinas/"
+			}
+		},
+		{
+			"name": "activar rutina",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": "http://localhost:8080/rutinas/activar/1"
+			}
+		},
+		{
+			"name": "eliminar rutina",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": "http://localhost:8080/rutinas/eliminar/1"
+			}
+		},
+		{
+			"name": "logout",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:8080/auth/logout"
+			}
+		}
+	]
+}
