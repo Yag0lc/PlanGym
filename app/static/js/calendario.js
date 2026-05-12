@@ -181,10 +181,15 @@ function renderRutinas() {
     actualizarRutinaActivaInicio();
 }
 
-function actualizarRutinaActivaInicio() {
+async function actualizarEstadisticasInicio() {
     const activa = rutinas.find(r => r.activa);
     document.getElementById('rutina-activa-nombre').textContent =
         activa ? activa.nombre : 'Ninguna';
+    document.getElementById('total-rutinas').textContent = rutinas.length;
+
+    const resp = await fetch(`/calendario/?mes=${mesActual}&anio=${anioActual}`);
+    const dias = await resp.json();
+    document.getElementById('total-dias').textContent = dias.length;
 }
 
 
