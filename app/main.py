@@ -9,6 +9,8 @@ from models.ejercicio_db import RutinaEjercicio
 from routes.rutinas_routes import rutinas_bp
 from models.calendario_db import DiaCompletado
 from routes.calendario_routes import calendario_bp
+from routes.ejercicios_routes import ejercicios_bp
+
 
 
 app = Flask(__name__)
@@ -36,7 +38,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(rutinas_bp)
 app.register_blueprint(calendario_bp)
 app.register_blueprint(perfil_bp)
-
+app.register_blueprint(ejercicios_bp)
 
 # === MODELOS ===
 from models.usuario_db import Usuario

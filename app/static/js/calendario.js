@@ -15,7 +15,7 @@ let diaSeleccionado = null;
 
 const hoy = new Date();
 let mesActual = hoy.getMonth() + 1;
-let anioActual = hoy.getFullYear();
+let anoActual = hoy.getFullYear();
 
 
 // ===== NAVEGACIÓN =====
@@ -33,7 +33,7 @@ function showPage(id, el) {
 // ===== CALENDARIO =====
 
 async function cargarDiasCompletados() {
-    const resp = await fetch(`/calendario/?mes=${mesActual}&anio=${anioActual}`);
+    const resp = await fetch(`/calendario/?mes=${mesActual}&anio=${anoActual}`);
     diasCompletados = await resp.json();
     generateCalendar();
 }
@@ -45,13 +45,13 @@ async function marcarDiaCompletado() {
         await fetch('/calendario/desmarcar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dia: diaSeleccionado, mes: mesActual, anio: anioActual })
+            body: JSON.stringify({ dia: diaSeleccionado, mes: mesActual, anio: anoActual })
         });
     } else {
         await fetch('/calendario/marcar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dia: diaSeleccionado, mes: mesActual, anio: anioActual })
+            body: JSON.stringify({ dia: diaSeleccionado, mes: mesActual, anio: anoActual })
         });
     }
 
@@ -60,8 +60,8 @@ async function marcarDiaCompletado() {
 
 async function cambiarMes(direccion) {
     mesActual += direccion;
-    if (mesActual > 12) { mesActual = 1; anioActual++; }
-    if (mesActual < 1) { mesActual = 12; anioActual--; }
+    if (mesActual > 12) { mesActual = 1; anoActual++; }
+    if (mesActual < 1) { mesActual = 12; anoActual--; }
     diaSeleccionado = null;
     await cargarDiasCompletados();
 }
@@ -71,7 +71,7 @@ function generateCalendar() {
     grid.innerHTML = '';
 
     document.getElementById('mes-anio').textContent =
-        `${nombresMeses[mesActual - 1]} ${anioActual}`;
+        `${nombresMeses[mesActual - 1]} ${anoActual}`;
 
     const diasSemana = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
     diasSemana.forEach(d => {
@@ -81,9 +81,9 @@ function generateCalendar() {
         grid.appendChild(header);
     });
 
-    const primerDia = new Date(anioActual, mesActual - 1, 1).getDay();
+    const primerDia = new Date(anoActual, mesActual - 1, 1).getDay();
     const offset = primerDia === 0 ? 6 : primerDia - 1;
-    const diasEnMes = new Date(anioActual, mesActual, 0).getDate();
+    const diasEnMes = new Date(anoActual, mesActual, 0).getDate();
 
     for (let i = 0; i < offset; i++) {
         const empty = document.createElement('div');
@@ -185,11 +185,19 @@ async function actualizarEstadisticasInicio() {
     const activa = rutinas.find(r => r.activa);
     document.getElementById('rutina-activa-nombre').textContent =
         activa ? activa.nombre : 'Ninguna';
-    document.getElementById('total-rutinas').textContent = rutinas.length;
 
-    const resp = await fetch(`/calendario/?mes=${mesActual}&anio=${anioActual}`);
+    const totalRutinas = document.getElementById('total-rutinas');
+    if (totalRutinas) totalRutinas.textContent = rutinas.length;
+
+    const resp = await fetch(`/calendario/?mes=${mesActual}&anio=${anoActual}`);
     const dias = await resp.json();
-    document.getElementById('total-dias').textContent = dias.length;
+
+    const totalDias = document.getElementById('total-dias');
+    if (totalDias) totalDias.textContent = dias.length;
+}
+
+function actualizarRutinaActivaInicio() {
+    actualizarEstadisticasInicio();
 }
 
 
@@ -207,11 +215,98 @@ function renderEjerciciosSelector() {
         cont.appendChild(chip);
     });
 
-    document.getElementById('catalogo-ejercicios').innerHTML =
-        ejerciciosDisponibles.map(ej => `<div class="ej-chip">${ej}</div>`).join('');
+    const catalogo = document.getElementById('catalogo-ejercicios');
+    if (catalogo) {
+        catalogo.innerHTML =
+            ejerciciosDisponibles.map(ej => `<div class="ej-chip">${ej}</div>`).join('');
+    }
+}
+// ===== EJERCICIOS API =====
+
+let categoriaActual = null;
+
+async function cargarCategorias() {
+    const resp = await fetch('/ejercicios/categorias');
+    const cats = await resp.json();
+    const cont = document.getElementById('filtros-categorias');
+    cats.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'filtro-btn';
+        btn.textContent = cat.nombre;
+        btn.onclick = () => filtrarEjercicios(cat.id, btn);
+        cont.appendChild(btn);
+    });
 }
 
+async function filtrarEjercicios(categoriaId, btn) {
+    categoriaActual = categoriaId;
+    document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    await cargarEjercicios();
+}
 
+async function cargarEjercicios() {
+    const grid = document.getElementById('ejercicios-grid');
+    grid.innerHTML = '<p class="loading-text">Cargando...</p>';
+    const url = categoriaActual
+        ? `/ejercicios/?categoria=${categoriaActual}`
+        : '/ejercicios/';
+    const resp = await fetch(url);
+    const lista = await resp.json();
+    grid.innerHTML = '';
+    if (!lista.length) {
+        grid.innerHTML = '<p class="loading-text">No hay ejercicios.</p>';
+        return;
+    }
+    lista.forEach(ej => {
+        const card = document.createElement('div');
+        card.className = 'ej-card';
+        card.innerHTML = `
+            <span class="ej-badge">${ej.categoria}</span>
+            <h4>${ej.nombre}</h4>
+            <p>${ej.descripcion ? ej.descripcion.substring(0, 80) + '...' : 'Sin descripción'}</p>
+        `;
+        card.onclick = () => abrirDetalle(ej.id);
+        grid.appendChild(card);
+    });
+}
+
+async function abrirDetalle(id) {
+    document.getElementById('modal-overlay').classList.add('open');
+    document.getElementById('modal-content').innerHTML = '<button class="modal-close" onclick="cerrarModal()">✕</button><p class="loading-text">Cargando...</p>';
+    const resp = await fetch(`/ejercicios/${id}`);
+    const ej = await resp.json();
+    document.getElementById('modal-content').innerHTML = `
+        <button class="modal-close" onclick="cerrarModal()">✕</button>
+        ${ej.imagen_url ? `<img src="${ej.imagen_url}" alt="${ej.nombre}">` : ''}
+        <h2>${ej.nombre}</h2>
+        <p class="modal-cat">${ej.categoria}</p>
+        <p class="modal-desc">${ej.descripcion || 'Sin descripción disponible.'}</p>
+        ${ej.musculos && ej.musculos.length ? `
+            <div class="modal-musculos">
+                ${ej.musculos.map(m => `<span class="ej-badge">${m}</span>`).join('')}
+            </div>` : ''}
+    `;
+}
+
+function cerrarModal(e) {
+    if (!e || e.target === document.getElementById('modal-overlay')) {
+        document.getElementById('modal-overlay').classList.remove('open');
+    }
+}
+
+// Cargar ejercicios al entrar a la página
+const originalShowPage = showPage;
+window.showPageEjercicios = function(id, el) {
+    originalShowPage(id, el);
+    if (id === 'ejercicios') {
+        const grid = document.getElementById('ejercicios-grid');
+        if (grid.querySelector('.loading-text')) {
+            cargarCategorias();
+            cargarEjercicios();
+        }
+    }
+}
 // ===== INICIO =====
 
 generateCalendar();
