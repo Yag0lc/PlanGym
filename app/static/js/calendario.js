@@ -12,10 +12,21 @@ const nombresMeses = [
 let rutinas = [];
 let diasCompletados = [];
 let diaSeleccionado = null;
+let rutinaEditandoId = null;
 
 const hoy = new Date();
 let mesActual = hoy.getMonth() + 1;
 let anoActual = hoy.getFullYear();
+
+function escaparHtml(texto) {
+    return String(texto).replace(/[&<>"']/g, caracter => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[caracter]);
+}
 
 
 // ===== NAVEGACIÓN =====
@@ -141,13 +152,62 @@ async function crearRutina() {
 }
 
 async function activarRutina(id) {
-    await fetch(`/rutinas/activar/${id}`, { method: 'POST' });
-    await cargarRutinas();
+    const resp = await fetch(`/rutinas/activar/${id}`, { method: 'POST' });
+    if (resp.ok) await cargarRutinas();
 }
 
 async function eliminarRutina(id) {
-    await fetch(`/rutinas/eliminar/${id}`, { method: 'POST' });
-    await cargarRutinas();
+    const resp = await fetch(`/rutinas/eliminar/${id}`, { method: 'POST' });
+    if (resp.ok) await cargarRutinas();
+}
+
+function editarRutina(id) {
+    rutinaEditandoId = id;
+    renderRutinas();
+}
+
+function cancelarEdicionRutina() {
+    rutinaEditandoId = null;
+    renderRutinas();
+}
+
+async function guardarRutina(id) {
+    const nombreInput = document.getElementById(`editar-rutina-nombre-${id}`);
+    const nombre = nombreInput.value.trim();
+    const ejercicios = [
+        ...document.querySelectorAll(`.editar-ejercicio-${id}.selected`)
+    ].map(chip => chip.textContent);
+
+    if (!nombre || ejercicios.length === 0) return;
+
+    const resp = await fetch(`/rutinas/actualizar/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, ejercicios })
+    });
+
+    if (resp.ok) {
+        rutinaEditandoId = null;
+        await cargarRutinas();
+    }
+}
+
+function renderEditorRutina(rutina) {
+    const chips = ejerciciosDisponibles.map(ej => {
+        const selected = rutina.ejercicios.includes(ej) ? 'selected' : '';
+        return `<div class="ej-chip editar-ejercicio-${rutina.id} ${selected}" onclick="this.classList.toggle('selected')">${escaparHtml(ej)}</div>`;
+    }).join('');
+
+    return `
+        <div class="rutina-editor">
+            <input type="text" id="editar-rutina-nombre-${rutina.id}" value="${escaparHtml(rutina.nombre)}">
+            <div class="chips">${chips}</div>
+            <div class="actions">
+                <button onclick="guardarRutina(${rutina.id})">Guardar</button>
+                <button class="secondary" onclick="cancelarEdicionRutina()">Cancelar</button>
+            </div>
+        </div>
+    `;
 }
 
 function renderRutinas() {
@@ -159,21 +219,26 @@ function renderRutinas() {
         div.classList.add('rutina-card');
         if (rutina.activa) div.classList.add('active-rutina');
 
-        div.innerHTML = `
+        if (rutinaEditandoId === rutina.id) {
+            div.innerHTML = renderEditorRutina(rutina);
+        } else {
+            div.innerHTML = `
             <div>
                 <h4>
-                    ${rutina.nombre}
+                    ${escaparHtml(rutina.nombre)}
                     ${rutina.activa ? '<span>ACTIVA</span>' : ''}
                 </h4>
-                <p>${rutina.ejercicios.join(', ')}</p>
+                <p>${escaparHtml(rutina.ejercicios.join(', '))}</p>
             </div>
             <div class="actions">
                 ${!rutina.activa
                     ? `<button onclick="activarRutina(${rutina.id})">Activar</button>`
                     : ''}
+                <button class="secondary" onclick="editarRutina(${rutina.id})">Editar</button>
                 <button class="danger" onclick="eliminarRutina(${rutina.id})">Eliminar</button>
             </div>
         `;
+        }
 
         cont.appendChild(div);
     });
