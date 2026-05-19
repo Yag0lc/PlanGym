@@ -13,7 +13,7 @@ CATEGORIAS = {
     11: "Pecho",
     13: "Espalda",
     14: "Hombros",
-    9:  "Glúteos",
+    9:  "Gluteos",
 }
 
 
@@ -52,7 +52,7 @@ def get_ejercicios(categoria_id=None, pagina=1):
     if categoria_id:
         params["category"] = categoria_id
 
-    data = fetch_wger(f"{BASE_URL}/exercise/", params)
+    data = fetch_wger(f"{BASE_URL}/exerciseinfo/", params)
     if data is None:
         return []
 
@@ -64,16 +64,11 @@ def get_ejercicios(categoria_id=None, pagina=1):
 
 
 def get_ejercicio_id(ejercicio_id):
-    data = fetch_wger(f"{BASE_URL}/exercise/{ejercicio_id}/?format=json")
+    data = fetch_wger(f"{BASE_URL}/exerciseinfo/{ejercicio_id}/?format=json")
     if data is None:
         return None
 
-    img_data = fetch_wger(f"{BASE_URL}/exerciseimage/?format=json&exercise_base={ejercicio_id}")
-    imagen_url = None
-    if img_data and img_data.get("results"):
-        imagen_url = img_data["results"][0].get("image")
-
-    return adaptar_ejercicio_detalle(data, imagen_url)
+    return adaptar_ejercicio_detalle(data)
 
 
 def obtenerEjercicios(categoria_id=None, limite=20, offset=0):
@@ -86,29 +81,82 @@ def obtenerDetalleEjercicio(ejercicio_id):
 
 
 def adaptar_ejercicio(data, categoria_id=None):
-    descripcion = data.get("description") or ""
-    descripcion = descripcion.replace("<p>", "").replace("</p>", " ")
-    descripcion = descripcion.replace("<br>", " ").replace("<br/>", " ")
-    descripcion = descripcion.strip()
+    traduccion = obtener_traduccion(data)
+    descripcion = limpiar_descripcion(traduccion.get("description"))
 
     return {
         "id": data.get("id"),
-        "nombre": data.get("name") or "Sin nombre",
+        "nombre": traduccion.get("name") or "Sin nombre",
         "descripcion": descripcion,
         "categoria": CATEGORIAS.get(categoria_id, "General"),
+        "imagen_url": obtener_imagen(data),
     }
 
 
-def adaptar_ejercicio_detalle(data, imagen_url=None):
-    descripcion = data.get("description") or ""
-    descripcion = descripcion.replace("<p>", "").replace("</p>", " ")
-    descripcion = descripcion.replace("<br>", " ").replace("<br/>", " ")
-    descripcion = descripcion.strip()
+def adaptar_ejercicio_detalle(data):
+    traduccion = obtener_traduccion(data)
+    descripcion = limpiar_descripcion(traduccion.get("description"))
 
     return {
         "id": data.get("id"),
-        "nombre": data.get("name") or "Sin nombre",
-        "descripcion": descripcion or "Sin descripción disponible.",
-        "categoria": CATEGORIAS.get(data.get("category"), "General"),
-        "imagen_url": imagen_url,
+        "nombre": traduccion.get("name") or "Sin nombre",
+        "descripcion": descripcion or "Sin descripcion disponible.",
+        "categoria": obtener_categoria(data),
+        "imagen_url": obtener_imagen(data),
+        "musculos": obtener_musculos(data),
     }
+
+
+def obtener_traduccion(data):
+    traducciones = data.get("translations") or []
+
+    for traduccion in traducciones:
+        if traduccion.get("language") == 2:
+            return traduccion
+
+    if traducciones:
+        return traducciones[0]
+
+    return {}
+
+
+def obtener_categoria(data):
+    categoria = data.get("category")
+
+    if isinstance(categoria, dict):
+        return categoria.get("name") or "General"
+
+    return CATEGORIAS.get(categoria, "General")
+
+
+def obtener_imagen(data):
+    imagenes = data.get("images") or []
+
+    for imagen in imagenes:
+        if imagen.get("is_main") and imagen.get("image"):
+            return imagen.get("image")
+
+    if imagenes:
+        return imagenes[0].get("image")
+
+    return None
+
+
+def obtener_musculos(data):
+    musculos = []
+
+    for musculo in data.get("muscles") or []:
+        if isinstance(musculo, dict):
+            nombre = musculo.get("name_en") or musculo.get("name")
+            if nombre:
+                musculos.append(nombre)
+
+    return musculos
+
+
+def limpiar_descripcion(descripcion):
+    descripcion = descripcion or ""
+    descripcion = descripcion.replace("<p>", "").replace("</p>", " ")
+    descripcion = descripcion.replace("<br>", " ").replace("<br/>", " ")
+    descripcion = descripcion.replace("<br />", " ")
+    return descripcion.strip()
