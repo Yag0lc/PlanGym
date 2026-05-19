@@ -20,26 +20,32 @@ def listar():
     mes = request.args.get('mes', type=int)
     anio = request.args.get('anio', type=int)
     dias = obtenerDias(session['usuario_id'], mes, anio)
+    if dias is None:
+        return jsonify({'error': 'Fecha invalida'}), 400
     return jsonify(dias)
 
 
 @calendario_bp.route('/marcar', methods=['POST'])
 @login_required
 def marcar():
-    datos = request.get_json()
+    datos = request.get_json(silent=True) or {}
     dia = datos.get('dia')
     mes = datos.get('mes')
     anio = datos.get('anio')
-    marcarDia(session['usuario_id'], dia, mes, anio)
+    resultado = marcarDia(session['usuario_id'], dia, mes, anio)
+    if resultado is None:
+        return jsonify({'error': 'Fecha invalida'}), 400
     return jsonify({'ok': True})
 
 
 @calendario_bp.route('/desmarcar', methods=['POST'])
 @login_required
 def desmarcar():
-    datos = request.get_json()
+    datos = request.get_json(silent=True) or {}
     dia = datos.get('dia')
     mes = datos.get('mes')
     anio = datos.get('anio')
-    desmarcarDia(session['usuario_id'], dia, mes, anio)
+    resultado = desmarcarDia(session['usuario_id'], dia, mes, anio)
+    if resultado is None:
+        return jsonify({'error': 'Fecha invalida'}), 400
     return jsonify({'ok': True})

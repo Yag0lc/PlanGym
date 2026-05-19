@@ -1,9 +1,11 @@
 import requests
+import time
+
+CACHE = {}
+CACHE_TTL = 60
 
 BASE_URL = "https://wger.de/api/v2"
-TIMEOUT = 5
 
-# Categorías de wger en español (id -> nombre)
 CATEGORIAS = {
     10: "Abdominales",
     8:  "Brazos",
@@ -15,92 +17,98 @@ CATEGORIAS = {
 }
 
 
-def _get(url, params=None):
-    """Petición GET con manejo de errores y timeout."""
+def get_cache(key):
+    if key in CACHE:
+        data, caduca = CACHE[key]
+        if time.time() < caduca:
+            return data
+    return None
+
+
+def set_cache(key, data):
+    CACHE[key] = (data, time.time() + CACHE_TTL)
+
+
+def fetch_wger(url, params=None):
+    cache_key = url + str(params)
+    cache_data = get_cache(cache_key)
+    if cache_data:
+        return cache_data
+
     try:
-        resp = requests.get(url, params=params, timeout=TIMEOUT)
-        resp.raise_for_status()
-        return resp.json()
-    except requests.exceptions.Timeout:
-        return None
-    except requests.exceptions.HTTPError:
-        return None
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        set_cache(cache_key, data)
+        return data
     except Exception:
         return None
 
 
-def obtenerEjercicios(categoria_id=None, limite=20, offset=0):
-    """
-    Devuelve lista de ejercicios en inglés (language=2).
-    Si se pasa categoria_id filtra por categoría.
-    Retorna lista de dicts con: id, nombre, descripcion, categoria.
-    """
-    params = {
-        "format": "json",
-        "language": 2,
-        "limit": limite,
-        "offset": offset,
-    }
+def get_ejercicios(categoria_id=None, pagina=1):
+    limite = 20
+    offset = (pagina - 1) * limite
+    params = {"format": "json", "language": 2, "limit": limite, "offset": offset}
     if categoria_id:
         params["category"] = categoria_id
 
-    data = _get(f"{BASE_URL}/exercise/", params)
+    data = fetch_wger(f"{BASE_URL}/exercise/", params)
     if data is None:
         return []
 
-    resultado = []
+    ejercicios = []
     for ej in data.get("results", []):
-        resultado.append({
-            "id": ej.get("id"),
-            "nombre": ej.get("name") or "Sin nombre",
-            "descripcion": _limpiarHtml(ej.get("description") or ""),
-            "categoria_id": categoria_id,
-            "categoria": CATEGORIAS.get(categoria_id, "General"),
-        })
-    return resultado
+        ejercicios.append(adaptar_ejercicio(ej, categoria_id))
+
+    return ejercicios
 
 
-def obtenerDetalleEjercicio(ejercicio_id):
-    """
-    Devuelve detalle de un ejercicio: nombre, descripcion, categoria, musculos, imagen.
-    Retorna None si hay error.
-    """
-    data = _get(f"{BASE_URL}/exercise/{ejercicio_id}/?format=json")
+def get_ejercicio_id(ejercicio_id):
+    data = fetch_wger(f"{BASE_URL}/exercise/{ejercicio_id}/?format=json")
     if data is None:
         return None
 
-    # Obtener info de la categoría
-    categoria_nombre = "General"
-    categoria_data = _get(f"{BASE_URL}/exercisecategory/{data.get('category', '')}/?format=json")
-    if categoria_data:
-        categoria_nombre = categoria_data.get("name", "General")
-
-    # Obtener músculos
-    musculos = []
-    for m_id in data.get("muscles", []):
-        m_data = _get(f"{BASE_URL}/muscle/{m_id}/?format=json")
-        if m_data:
-            musculos.append(m_data.get("name_en") or m_data.get("name", ""))
-
-    # Obtener imagen si existe
-    img_data = _get(f"{BASE_URL}/exerciseimage/?format=json&exercise_base={ejercicio_id}")
+    img_data = fetch_wger(f"{BASE_URL}/exerciseimage/?format=json&exercise_base={ejercicio_id}")
     imagen_url = None
     if img_data and img_data.get("results"):
         imagen_url = img_data["results"][0].get("image")
 
+    return adaptar_ejercicio_detalle(data, imagen_url)
+
+
+def obtenerEjercicios(categoria_id=None, limite=20, offset=0):
+    pagina = (offset // limite) + 1
+    return get_ejercicios(categoria_id, pagina)
+
+
+def obtenerDetalleEjercicio(ejercicio_id):
+    return get_ejercicio_id(ejercicio_id)
+
+
+def adaptar_ejercicio(data, categoria_id=None):
+    descripcion = data.get("description") or ""
+    descripcion = descripcion.replace("<p>", "").replace("</p>", " ")
+    descripcion = descripcion.replace("<br>", " ").replace("<br/>", " ")
+    descripcion = descripcion.strip()
+
     return {
-        "id": ejercicio_id,
+        "id": data.get("id"),
         "nombre": data.get("name") or "Sin nombre",
-        "descripcion": _limpiarHtml(data.get("description") or "Sin descripción disponible."),
-        "categoria": categoria_nombre,
-        "musculos": musculos,
-        "imagen_url": imagen_url,
+        "descripcion": descripcion,
+        "categoria": CATEGORIAS.get(categoria_id, "General"),
     }
 
 
-def _limpiarHtml(texto):
-    """Elimina tags HTML básicos de la descripción."""
-    import re
-    limpio = re.sub(r"<[^>]+>", " ", texto)
-    limpio = re.sub(r"\s+", " ", limpio).strip()
-    return limpio
+def adaptar_ejercicio_detalle(data, imagen_url=None):
+    descripcion = data.get("description") or ""
+    descripcion = descripcion.replace("<p>", "").replace("</p>", " ")
+    descripcion = descripcion.replace("<br>", " ").replace("<br/>", " ")
+    descripcion = descripcion.strip()
+
+    return {
+        "id": data.get("id"),
+        "nombre": data.get("name") or "Sin nombre",
+        "descripcion": descripcion or "Sin descripción disponible.",
+        "categoria": CATEGORIAS.get(data.get("category"), "General"),
+        "imagen_url": imagen_url,
+    }
