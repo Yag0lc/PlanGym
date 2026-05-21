@@ -49,7 +49,7 @@ function showPage(id, el) {
 // ===== CALENDARIO =====
 
 async function cargarDiasCompletados() {
-    const resp = await fetch(`/calendario/?mes=${mesActual}&ano=${anoActual}`);
+    const resp = await fetch(`/calendario/?mes=${mesActual}&anio=${anoActual}`);
     diasCompletados = await resp.json();
 
     generateCalendar();
