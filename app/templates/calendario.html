@@ -14,10 +14,10 @@
         <div class="logo"><span>Plan</span>Gym</div>
 
         <nav>
-            <button class="nav-item active" onclick="showPage('inicio', this)">Inicio</button>
-            <button class="nav-item" onclick="showPage('rutinas', this)">Rutinas</button>
-            <button class="nav-item" onclick="showPage('calendario', this)">Calendario</button>
-            <button class="nav-item" onclick="showPage('ejercicios', this)">Ejercicios</button>
+            <button class="nav-item active" onclick="mostrarPagina('inicio', this)">Inicio</button>
+            <button class="nav-item" onclick="mostrarPagina('rutinas', this)">Rutinas</button>
+            <button class="nav-item" onclick="mostrarPagina('calendario', this)">Calendario</button>
+            <button class="nav-item" onclick="mostrarPagina('ejercicios', this)">Ejercicios</button>
         </nav>
 
         <div class="user-box">
@@ -124,6 +124,9 @@
 
 </div>
 
+<script src="{{ url_for('static', filename='js/navegacion.js') }}"></script>
 <script src="{{ url_for('static', filename='js/calendario.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rutinas.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ejercicios.js') }}"></script>
 </body>
 </html>
