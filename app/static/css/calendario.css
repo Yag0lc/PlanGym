@@ -277,6 +277,10 @@ button:hover{
     border-color: #6366f1;
 }
 
+.ej-card.selected {
+    border-color: #22c55e;
+}
+
 .ej-card h4 {
     font-size: 0.95rem;
     margin-bottom: 6px;
@@ -286,6 +290,13 @@ button:hover{
 .ej-card p {
     font-size: 0.78rem;
     color: #888;
+    margin-bottom: 12px;
+}
+
+.select-exercise-btn {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 0.8rem;
 }
 
 .ej-badge {

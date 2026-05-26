@@ -6,6 +6,10 @@ const nombresMeses = [
     "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ];
 
+const nombresDias = [
+    "domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"
+];
+
 let diasCompletados = [];
 let diaSeleccionado = null;
 
@@ -13,11 +17,23 @@ const hoy = new Date();
 let mesActual = hoy.getMonth() + 1;
 let anoActual = hoy.getFullYear();
 
+function mostrarFechaActual() {
+    const fecha = new Date();
+    const diaSemana = nombresDias[fecha.getDay()];
+    const dia = fecha.getDate();
+    const mes = nombresMeses[fecha.getMonth()].toLowerCase();
+    const ano = fecha.getFullYear();
+
+    document.getElementById('fecha-actual').textContent =
+        `${diaSemana}, ${dia} de ${mes} de ${ano}`;
+}
+
 async function cargarDiasCompletados() {
     const resp = await fetch(`/calendario/?mes=${mesActual}&anio=${anoActual}`);
     diasCompletados = await resp.json();
 
     generarCalendario();
+    await actualizarRacha();
 }
 
 async function marcarDiaCompletado() {
@@ -58,6 +74,52 @@ async function cambiarMes(direccion) {
     diaSeleccionado = null;
 
     await cargarDiasCompletados();
+}
+
+async function obtenerDiasCompletadosMes(mes, ano) {
+    const resp = await fetch(`/calendario/?mes=${mes}&anio=${ano}`);
+
+    if (!resp.ok) {
+        return [];
+    }
+
+    return await resp.json();
+}
+
+async function actualizarRacha() {
+    const rachaElemento = document.getElementById('racha-dias');
+    if (!rachaElemento) return;
+
+    let fecha = new Date();
+    let racha = 0;
+    const cacheMeses = {};
+
+    for (let i = 0; i < 365; i++) {
+        const mes = fecha.getMonth() + 1;
+        const ano = fecha.getFullYear();
+        const clave = `${mes}-${ano}`;
+
+        if (!cacheMeses[clave]) {
+            cacheMeses[clave] = await obtenerDiasCompletadosMes(mes, ano);
+        }
+
+        const dia = fecha.getDate();
+        const completado = cacheMeses[clave].includes(dia);
+
+        if (!completado && racha === 0 && i === 0) {
+            fecha.setDate(fecha.getDate() - 1);
+            continue;
+        }
+
+        if (!completado) {
+            break;
+        }
+
+        racha++;
+        fecha.setDate(fecha.getDate() - 1);
+    }
+
+    rachaElemento.textContent = racha;
 }
 
 function generarCalendario() {
@@ -111,4 +173,5 @@ function seleccionarDia(dia) {
     generarCalendario();
 }
 
+mostrarFechaActual();
 cargarDiasCompletados();

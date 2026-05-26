@@ -5,6 +5,8 @@ CACHE = {}
 CACHE_TTL = 60
 
 BASE_URL = "https://wger.de/api/v2"
+IDIOMA_ESPANOL = 4
+IDIOMA_INGLES = 2
 
 CATEGORIAS = {
     10: "Abdominales",
@@ -48,7 +50,7 @@ def fetch_wger(url, params=None):
 def get_ejercicios(categoria_id=None, pagina=1):
     limite = 20
     offset = (pagina - 1) * limite
-    params = {"format": "json", "language": 2, "limit": limite, "offset": offset}
+    params = {"format": "json", "language": IDIOMA_ESPANOL, "limit": limite, "offset": offset}
     if categoria_id:
         params["category"] = categoria_id
 
@@ -111,7 +113,11 @@ def obtener_traduccion(data):
     traducciones = data.get("translations") or []
 
     for traduccion in traducciones:
-        if traduccion.get("language") == 2:
+        if traduccion.get("language") == IDIOMA_ESPANOL:
+            return traduccion
+
+    for traduccion in traducciones:
+        if traduccion.get("language") == IDIOMA_INGLES:
             return traduccion
 
     if traducciones:

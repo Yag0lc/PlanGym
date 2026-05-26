@@ -57,8 +57,9 @@ async function cargarEjercicios() {
 
     lista.forEach(ej => {
         const card = document.createElement('div');
+        const seleccionado = ejercicioEstaSeleccionado(ej.nombre);
 
-        card.className = 'ej-card';
+        card.className = seleccionado ? 'ej-card selected' : 'ej-card';
 
         card.innerHTML = `
             <span class="ej-badge">${ej.categoria}</span>
@@ -72,9 +73,17 @@ async function cargarEjercicios() {
                         : 'Sin descripcion'
                 }
             </p>
+
+            <button class="select-exercise-btn">
+                ${seleccionado ? 'Quitar de rutina' : 'Anadir a rutina'}
+            </button>
         `;
 
         card.onclick = () => abrirDetalle(ej.id);
+        card.querySelector('.select-exercise-btn').onclick = (event) => {
+            event.stopPropagation();
+            cambiarEjercicioParaRutina(ej.nombre);
+        };
 
         grid.appendChild(card);
     });
@@ -93,6 +102,7 @@ async function abrirDetalle(id) {
 
     const resp = await fetch(`/ejercicios/${id}`);
     const ej = await resp.json();
+    const seleccionado = ejercicioEstaSeleccionado(ej.nombre);
 
     content.innerHTML = `
         <button class="modal-close" onclick="cerrarModal()">x</button>
@@ -116,6 +126,10 @@ async function abrirDetalle(id) {
             `
                 : ''
         }
+
+        <button onclick='cambiarEjercicioParaRutina(${JSON.stringify(ej.nombre)}); cerrarModal();'>
+            ${seleccionado ? 'Quitar de rutina' : 'Anadir a rutina'}
+        </button>
     `;
 }
 
