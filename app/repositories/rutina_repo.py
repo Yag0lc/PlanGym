@@ -13,8 +13,12 @@ def crearRutina(nombre, id_usuario, ejercicios):
     db.session.add(rutina_nueva)
     db.session.flush()  # Para obtener el id antes del commit
 
-    for nombre_ejercicio in ejercicios:
-        ejercicio = RutinaEjercicio(nombre=nombre_ejercicio, id_rutina=rutina_nueva.id)
+    for ejercicio_datos in ejercicios:
+        ejercicio = RutinaEjercicio(
+            nombre=ejercicio_datos["nombre"],
+            dia_semana=ejercicio_datos["dia_semana"],
+            id_rutina=rutina_nueva.id
+        )
         db.session.add(ejercicio)
 
     db.session.commit()
@@ -37,8 +41,12 @@ def actualizarRutina(id_rutina, id_usuario, nombre, ejercicios):
     rutina.nombre = nombre
     RutinaEjercicio.query.filter_by(id_rutina=rutina.id).delete()
 
-    for nombre_ejercicio in ejercicios:
-        ejercicio = RutinaEjercicio(nombre=nombre_ejercicio, id_rutina=rutina.id)
+    for ejercicio_datos in ejercicios:
+        ejercicio = RutinaEjercicio(
+            nombre=ejercicio_datos["nombre"],
+            dia_semana=ejercicio_datos["dia_semana"],
+            id_rutina=rutina.id
+        )
         db.session.add(ejercicio)
 
     db.session.commit()

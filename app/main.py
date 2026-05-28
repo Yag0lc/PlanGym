@@ -1,5 +1,6 @@
 import os
-from flask import Flask, render_template, session, redirect, url_for
+import logging
+from flask import Flask, render_template, session, redirect, url_for, request
 from flask_session import Session
 from database.db import db
 from routes.perfil_routes import perfil_bp
@@ -14,6 +15,7 @@ from routes.ejercicios_routes import ejercicios_bp
 
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
 
 # === CONFIGURACIÓN DE SESIÓN ===
 app.config['SECRET_KEY'] = "PlanGym-Secret-Key"
@@ -31,6 +33,11 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
+
+
+@app.before_request
+def registrar_peticion():
+    app.logger.info("%s %s", request.method, request.path)
 
 # === BLUEPRINTS ===
 from routes.auth import auth_bp
@@ -69,6 +76,15 @@ def dashboard():
 with app.app_context():
     os.makedirs(os.path.join(BASE_DIR, '..', 'data'), exist_ok=True)
     db.create_all()
+
+    columnas = db.session.execute(db.text("PRAGMA table_info(rutina_ejercicios)")).fetchall()
+    nombres_columnas = [columna[1] for columna in columnas]
+    if "dia_semana" not in nombres_columnas:
+        db.session.execute(db.text(
+            "ALTER TABLE rutina_ejercicios ADD COLUMN dia_semana VARCHAR(20) NOT NULL DEFAULT 'lunes'"
+        ))
+        db.session.commit()
+
     print("Base de datos lista.")
 
 

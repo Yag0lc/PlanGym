@@ -3,25 +3,44 @@
 let rutinas = [];
 let rutinaEditandoId = null;
 let ejerciciosParaRutina = cargarEjerciciosParaRutina();
+const diasSemana = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
 
 function cargarEjerciciosParaRutina() {
     const datos = localStorage.getItem('plangym_ejercicios_rutina');
-    return datos ? JSON.parse(datos) : [];
+    const ejercicios = datos ? JSON.parse(datos) : [];
+    return ejercicios.map(normalizarEjercicioRutina).filter(ej => ej.nombre);
 }
 
 function guardarEjerciciosParaRutina() {
     localStorage.setItem('plangym_ejercicios_rutina', JSON.stringify(ejerciciosParaRutina));
 }
 
+function normalizarEjercicioRutina(ejercicio) {
+    if (typeof ejercicio === 'string') {
+        return {
+            nombre: ejercicio,
+            dia_semana: 'lunes'
+        };
+    }
+
+    return {
+        nombre: ejercicio.nombre || '',
+        dia_semana: diasSemana.includes(ejercicio.dia_semana) ? ejercicio.dia_semana : 'lunes'
+    };
+}
+
 function ejercicioEstaSeleccionado(nombre) {
-    return ejerciciosParaRutina.includes(nombre);
+    return ejerciciosParaRutina.some(ej => ej.nombre === nombre);
 }
 
 function cambiarEjercicioParaRutina(nombre) {
     if (ejercicioEstaSeleccionado(nombre)) {
-        ejerciciosParaRutina = ejerciciosParaRutina.filter(ej => ej !== nombre);
+        ejerciciosParaRutina = ejerciciosParaRutina.filter(ej => ej.nombre !== nombre);
     } else {
-        ejerciciosParaRutina.push(nombre);
+        ejerciciosParaRutina.push({
+            nombre,
+            dia_semana: 'lunes'
+        });
     }
 
     guardarEjerciciosParaRutina();
@@ -32,9 +51,28 @@ function cambiarEjercicioParaRutina(nombre) {
     }
 }
 
+function cambiarDiaEjercicio(nombre, dia) {
+    ejerciciosParaRutina = ejerciciosParaRutina.map(ej => {
+        if (ej.nombre === nombre) {
+            return {
+                nombre: ej.nombre,
+                dia_semana: dia
+            };
+        }
+
+        return ej;
+    });
+
+    guardarEjerciciosParaRutina();
+}
+
 async function cargarRutinas() {
     const resp = await fetch('/rutinas/');
     rutinas = await resp.json();
+    rutinas = rutinas.map(rutina => {
+        rutina.ejercicios = rutina.ejercicios.map(normalizarEjercicioRutina);
+        return rutina;
+    });
 
     renderRutinas();
     actualizarEstadisticasInicio();
@@ -101,7 +139,12 @@ async function guardarRutina(id) {
     const nombre = nombreInput.value.trim();
     const ejercicios = [
         ...document.querySelectorAll(`.editar-ejercicio-${id}.selected`)
-    ].map(chip => chip.textContent);
+    ].map(fila => {
+        return {
+            nombre: fila.dataset.nombre,
+            dia_semana: fila.querySelector('select').value
+        };
+    });
 
     if (!nombre || ejercicios.length === 0) return;
 
@@ -123,11 +166,29 @@ async function guardarRutina(id) {
 }
 
 function renderEditorRutina(rutina) {
-    const opciones = [...new Set([...ejerciciosParaRutina, ...rutina.ejercicios])];
+    const opciones = [];
+
+    [...rutina.ejercicios, ...ejerciciosParaRutina].forEach(ejercicio => {
+        if (!opciones.some(ej => ej.nombre === ejercicio.nombre)) {
+            opciones.push(ejercicio);
+        }
+    });
 
     const chips = opciones.map(ej => {
-        const selected = rutina.ejercicios.includes(ej) ? 'selected' : '';
-        return `<div class="ej-chip editar-ejercicio-${rutina.id} ${selected}" onclick="this.classList.toggle('selected')">${ej}</div>`;
+        const ejercicioRutina = rutina.ejercicios.find(item => item.nombre === ej.nombre);
+        const selected = ejercicioRutina ? 'selected' : '';
+        const dia = ejercicioRutina ? ejercicioRutina.dia_semana : ej.dia_semana;
+        const opcionesDias = diasSemana.map(diaSemana => {
+            const marcado = diaSemana === dia ? 'selected' : '';
+            return `<option value="${diaSemana}" ${marcado}>${diaSemana}</option>`;
+        }).join('');
+
+        return `
+            <div class="ejercicio-dia-row editar-ejercicio-${rutina.id} ${selected}" data-nombre="${ej.nombre}">
+                <button class="secondary" onclick="this.parentElement.classList.toggle('selected')">${ej.nombre}</button>
+                <select class="day-select">${opcionesDias}</select>
+            </div>
+        `;
     }).join('');
 
     return `
@@ -149,6 +210,7 @@ function renderRutinas() {
 
     rutinas.forEach(rutina => {
         const div = document.createElement('div');
+        const ejerciciosTexto = textoRutinaPorDias(rutina.ejercicios);
 
         div.classList.add('rutina-card');
 
@@ -166,7 +228,7 @@ function renderRutinas() {
                     ${rutina.activa ? '<span>ACTIVA</span>' : ''}
                 </h4>
 
-                <p>${rutina.ejercicios.join(', ')}</p>
+                ${ejerciciosTexto}
             </div>
 
             <div class="actions">
@@ -191,6 +253,26 @@ function renderRutinas() {
     });
 }
 
+function textoRutinaPorDias(ejercicios) {
+    const diasConEjercicios = diasSemana.map(dia => {
+        const ejerciciosDia = ejercicios
+            .filter(ej => ej.dia_semana === dia)
+            .map(ej => ej.nombre);
+
+        if (ejerciciosDia.length === 0) return '';
+
+        return `<p class="rutina-dia"><strong>${dia}:</strong> ${ejerciciosDia.join(', ')}</p>`;
+    });
+
+    return `<div class="rutina-dias">${diasConEjercicios.join('')}</div>`;
+}
+
+function obtenerDiaHoy() {
+    const indice = new Date().getDay();
+    const dias = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+    return dias[indice];
+}
+
 async function actualizarEstadisticasInicio() {
     const activa = rutinas.find(r => r.activa);
 
@@ -200,6 +282,20 @@ async function actualizarEstadisticasInicio() {
     const totalRutinas = document.getElementById('total-rutinas');
     if (totalRutinas) {
         totalRutinas.textContent = rutinas.length;
+    }
+
+    const entrenoHoy = document.getElementById('entreno-hoy');
+    if (entrenoHoy) {
+        if (!activa) {
+            entrenoHoy.textContent = 'Sin rutina';
+        } else {
+            const diaHoy = obtenerDiaHoy();
+            const ejerciciosHoy = activa.ejercicios
+                .filter(ej => ej.dia_semana === diaHoy)
+                .map(ej => ej.nombre);
+
+            entrenoHoy.textContent = ejerciciosHoy.length > 0 ? ejerciciosHoy.join(', ') : 'Descanso';
+        }
     }
 
     const resp = await fetch(`/calendario/?mes=${mesActual}&anio=${anoActual}`);
@@ -219,16 +315,26 @@ function renderEjerciciosSelector() {
     }
 
     ejerciciosParaRutina.forEach(ej => {
-        const chip = document.createElement('div');
+        const fila = document.createElement('div');
+        const opcionesDias = diasSemana.map(dia => {
+            const marcado = dia === ej.dia_semana ? 'selected' : '';
+            return `<option value="${dia}" ${marcado}>${dia}</option>`;
+        }).join('');
 
-        chip.classList.add('ej-chip', 'selected');
-        chip.textContent = ej;
+        fila.classList.add('ejercicio-dia-row', 'selected');
+        fila.innerHTML = `
+            <button class="secondary">${ej.nombre}</button>
+            <select class="day-select">${opcionesDias}</select>
+        `;
 
-        chip.onclick = () => {
-            cambiarEjercicioParaRutina(ej);
+        fila.querySelector('button').onclick = () => {
+            cambiarEjercicioParaRutina(ej.nombre);
+        };
+        fila.querySelector('select').onchange = evento => {
+            cambiarDiaEjercicio(ej.nombre, evento.target.value);
         };
 
-        cont.appendChild(chip);
+        cont.appendChild(fila);
     });
 }
 

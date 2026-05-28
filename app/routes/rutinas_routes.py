@@ -10,6 +10,21 @@ from services.rutina_service import (
 rutinas_bp = Blueprint('rutinas_bp', __name__, url_prefix='/rutinas')
 
 
+def rutinaAJson(rutina):
+    return {
+        'id': rutina.id,
+        'nombre': rutina.nombre,
+        'activa': rutina.activa,
+        'ejercicios': [
+            {
+                'nombre': e.nombre,
+                'dia_semana': e.dia_semana
+            }
+            for e in rutina.ejercicios
+        ]
+    }
+
+
 def login_required(f):
     from functools import wraps
     @wraps(f)
@@ -26,12 +41,7 @@ def listar():
     rutinas = obtenerRutinas(session['usuario_id'])
     resultado = []
     for r in rutinas:
-        resultado.append({
-            'id': r.id,
-            'nombre': r.nombre,
-            'activa': r.activa,
-            'ejercicios': [e.nombre for e in r.ejercicios]
-        })
+        resultado.append(rutinaAJson(r))
     return jsonify(resultado)
 
 
@@ -47,12 +57,7 @@ def crear():
     if rutina is None:
         return jsonify({'error': 'Datos inválidos'}), 400
 
-    return jsonify({
-        'id': rutina.id,
-        'nombre': rutina.nombre,
-        'activa': rutina.activa,
-        'ejercicios': [e.nombre for e in rutina.ejercicios]
-    }), 201
+    return jsonify(rutinaAJson(rutina)), 201
 
 
 @rutinas_bp.route('/actualizar/<int:id_rutina>', methods=['PUT'])
@@ -67,12 +72,7 @@ def actualizar(id_rutina):
     if rutina is None:
         return jsonify({'error': 'Rutina no encontrada o datos invalidos'}), 400
 
-    return jsonify({
-        'id': rutina.id,
-        'nombre': rutina.nombre,
-        'activa': rutina.activa,
-        'ejercicios': [e.nombre for e in rutina.ejercicios]
-    })
+    return jsonify(rutinaAJson(rutina))
 
 
 @rutinas_bp.route('/activar/<int:id_rutina>', methods=['POST'])
