@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+
+flask_session/
+app/flask_session/
+
+data/*.db
+
+.env
+.venv/
+venv/
+
+*.zip

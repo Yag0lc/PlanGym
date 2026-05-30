@@ -1,0 +1,12 @@
+app/venv/
+app/flask_session/
+
+__pycache__/
+*.pyc
+
+.git
+.gitignore
+
+.env
+
+*.zip
