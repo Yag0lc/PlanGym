@@ -1,4 +1,4 @@
-// ===== EJERCICIOS API =====
+
 
 let categoriaActual = null;
 

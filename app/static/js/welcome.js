@@ -5,7 +5,6 @@ const tabLogin = document.getElementById('tab-login');
 const tabRegister = document.getElementById('tab-register');
 const tabIndicator = document.querySelector('.tab-indicator');
 
-// Función para cambiar a Login
 function showLogin() {
     loginForm.classList.add('active');
     registerForm.classList.remove('active');
@@ -14,7 +13,6 @@ function showLogin() {
     tabIndicator.classList.remove('move-right');
 }
 
-// Función para cambiar a Register
 function showRegister() {
     registerForm.classList.add('active');
     loginForm.classList.remove('active');
@@ -23,11 +21,9 @@ function showRegister() {
     tabIndicator.classList.add('move-right');
 }
 
-// Event listeners de tabs
 tabLogin.addEventListener('click', showLogin);
 tabRegister.addEventListener('click', showRegister);
 
-// Indicador de fortaleza de contraseña
 const registerPassword = document.getElementById('register-password');
 const strengthBar = document.querySelector('.strength-bar');
 
@@ -36,7 +32,6 @@ if (registerPassword) {
         const password = e.target.value;
         const length = password.length;
         
-        // Limpiar clases
         strengthBar.classList.remove('weak', 'medium', 'strong');
         
         if (length === 0) {
@@ -51,7 +46,6 @@ if (registerPassword) {
     });
 }
 
-// Validación visual de inputs
 const allInputs = document.querySelectorAll('input');
 
 allInputs.forEach(input => {
@@ -68,7 +62,6 @@ allInputs.forEach(input => {
     });
 });
 
-// Animación suave al hacer scroll (si la página crece)
 document.addEventListener('DOMContentLoaded', () => {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -79,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Observar elementos con animación
     const animatedElements = document.querySelectorAll('.feature-item, .auth-container');
     animatedElements.forEach(el => observer.observe(el));
 });
