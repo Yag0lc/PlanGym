@@ -3,13 +3,31 @@ import repositories.calendario_repo as calendario_repo
 
 
 def validarMesAnio(mes, anio):
-    return isinstance(mes, int) and isinstance(anio, int) and 1 <= mes <= 12 and 2000 <= anio <= 2100
+    if not isinstance(mes, int) or not isinstance(anio, int):
+        return False
+
+    if mes < 1 or mes > 12:
+        return False
+
+    if anio < 2000 or anio > 2100:
+        return False
+
+    return True
 
 
 def validarFecha(dia, mes, anio):
-    if not validarMesAnio(mes, anio) or not isinstance(dia, int):
+    if not isinstance(dia, int):
         return False
-    return 1 <= dia <= monthrange(anio, mes)[1]
+
+    if not validarMesAnio(mes, anio):
+        return False
+
+    dias_del_mes = monthrange(anio, mes)[1]
+
+    if dia < 1 or dia > dias_del_mes:
+        return False
+
+    return True
 
 
 def obtenerDias(id_usuario, mes, anio):
