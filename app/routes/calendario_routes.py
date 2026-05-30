@@ -4,19 +4,11 @@ from services.calendario_service import obtenerDias, marcarDia, desmarcarDia
 calendario_bp = Blueprint('calendario_bp', __name__, url_prefix='/calendario')
 
 
-def login_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'usuario_id' not in session:
-            return jsonify({'error': 'No autenticado'}), 401
-        return f(*args, **kwargs)
-    return decorated
-
-
 @calendario_bp.route('/', methods=['GET'])
-@login_required
 def listar():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
     mes = request.args.get('mes', type=int)
     anio = request.args.get('anio', type=int)
     dias = obtenerDias(session['usuario_id'], mes, anio)
@@ -26,8 +18,10 @@ def listar():
 
 
 @calendario_bp.route('/marcar', methods=['POST'])
-@login_required
 def marcar():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
     datos = request.get_json(silent=True) or {}
     dia = datos.get('dia')
     mes = datos.get('mes')
@@ -39,8 +33,10 @@ def marcar():
 
 
 @calendario_bp.route('/desmarcar', methods=['POST'])
-@login_required
 def desmarcar():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
     datos = request.get_json(silent=True) or {}
     dia = datos.get('dia')
     mes = datos.get('mes')

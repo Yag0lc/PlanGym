@@ -25,19 +25,11 @@ def rutinaAJson(rutina):
     }
 
 
-def login_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'usuario_id' not in session:
-            return jsonify({'error': 'No autenticado'}), 401
-        return f(*args, **kwargs)
-    return decorated
-
-
 @rutinas_bp.route('/', methods=['GET'])
-@login_required
 def listar():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
     rutinas = obtenerRutinas(session['usuario_id'])
     resultado = []
     for r in rutinas:
@@ -46,8 +38,10 @@ def listar():
 
 
 @rutinas_bp.route('/crear', methods=['POST'])
-@login_required
 def crear():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
     datos = request.get_json(silent=True) or {}
     nombre = datos.get('nombre', '').strip()
     ejercicios = datos.get('ejercicios', [])
@@ -61,8 +55,10 @@ def crear():
 
 
 @rutinas_bp.route('/actualizar/<int:id_rutina>', methods=['PUT'])
-@login_required
 def actualizar(id_rutina):
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
     datos = request.get_json(silent=True) or {}
     nombre = datos.get('nombre', '').strip()
     ejercicios = datos.get('ejercicios', [])
@@ -76,8 +72,10 @@ def actualizar(id_rutina):
 
 
 @rutinas_bp.route('/activar/<int:id_rutina>', methods=['POST'])
-@login_required
 def activar(id_rutina):
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
     resultado = activarRutina(id_rutina, session['usuario_id'])
     if resultado:
         return jsonify({'ok': True})
@@ -85,8 +83,10 @@ def activar(id_rutina):
 
 
 @rutinas_bp.route('/eliminar/<int:id_rutina>', methods=['POST'])
-@login_required
 def eliminar(id_rutina):
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
     resultado = eliminarRutina(id_rutina, session['usuario_id'])
     if resultado:
         return jsonify({'ok': True})

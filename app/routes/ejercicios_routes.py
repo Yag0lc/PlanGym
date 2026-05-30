@@ -4,27 +4,21 @@ from services.ejercicios_service import listarEjercicios, detalleEjercicio, CATE
 ejercicios_bp = Blueprint('ejercicios_bp', __name__, url_prefix='/ejercicios')
 
 
-def login_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'usuario_id' not in session:
-            return jsonify({'error': 'No autenticado'}), 401
-        return f(*args, **kwargs)
-    return decorated
-
-
 @ejercicios_bp.route('/categorias', methods=['GET'])
-@login_required
 def categorias():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
     return jsonify([
         {'id': k, 'nombre': v} for k, v in CATEGORIAS.items()
     ])
 
 
 @ejercicios_bp.route('/', methods=['GET'])
-@login_required
 def listar():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
     categoria_id = request.args.get('categoria', type=int)
     pagina = request.args.get('pagina', 1, type=int)
     ejercicios = listarEjercicios(categoria_id=categoria_id, pagina=pagina)
@@ -32,8 +26,10 @@ def listar():
 
 
 @ejercicios_bp.route('/<int:ejercicio_id>', methods=['GET'])
-@login_required
 def detalle(ejercicio_id):
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
     ej = detalleEjercicio(ejercicio_id)
     if ej is None:
         return jsonify({'error': 'Ejercicio no encontrado'}), 404
