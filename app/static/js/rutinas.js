@@ -1,4 +1,4 @@
-// ===== RUTINAS =====
+
 
 let rutinas = [];
 let rutinaEditandoId = null;
@@ -68,6 +68,12 @@ function cambiarDiaEjercicio(nombre, dia) {
 
 async function cargarRutinas() {
     const resp = await fetch('/rutinas/');
+    if (!resp.ok) {
+        rutinas = [];
+        renderRutinas();
+        return;
+    }
+
     rutinas = await resp.json();
     rutinas = rutinas.map(rutina => {
         rutina.ejercicios = rutina.ejercicios.map(normalizarEjercicioRutina);
@@ -254,6 +260,7 @@ function renderRutinas() {
 }
 
 function textoRutinaPorDias(ejercicios) {
+    let hayMas = false;
     const diasConEjercicios = diasSemana.map(dia => {
         const ejerciciosDia = ejercicios
             .filter(ej => ej.dia_semana === dia)
@@ -261,10 +268,23 @@ function textoRutinaPorDias(ejercicios) {
 
         if (ejerciciosDia.length === 0) return '';
 
-        return `<p class="rutina-dia"><strong>${dia}:</strong> ${ejerciciosDia.join(', ')}</p>`;
-    });
+        if (ejerciciosDia.length > 3) {
+            hayMas = true;
+        }
 
-    return `<div class="rutina-dias">${diasConEjercicios.join('')}</div>`;
+        return `<p class="rutina-dia"><strong>${dia}:</strong> ${ejerciciosDia.slice(0, 3).join(', ')}${ejerciciosDia.length > 3 ? '...' : ''}</p>`;
+    }).filter(linea => linea);
+
+    if (diasConEjercicios.length > 3) {
+        hayMas = true;
+    }
+
+    const lineasVisibles = diasConEjercicios.slice(0, 3);
+    if (hayMas) {
+        lineasVisibles.push('<p class="rutina-dia">...</p>');
+    }
+
+    return `<div class="rutina-dias">${lineasVisibles.join('')}</div>`;
 }
 
 function obtenerDiaHoy() {
@@ -285,16 +305,35 @@ async function actualizarEstadisticasInicio() {
     }
 
     const entrenoHoy = document.getElementById('entreno-hoy');
+    const entrenoHoyLista = document.getElementById('entreno-hoy-lista');
     if (entrenoHoy) {
         if (!activa) {
             entrenoHoy.textContent = 'Sin rutina';
+            if (entrenoHoyLista) {
+                entrenoHoyLista.innerHTML = '<p class="loading-text">No tienes una rutina activa.</p>';
+            }
         } else {
             const diaHoy = obtenerDiaHoy();
             const ejerciciosHoy = activa.ejercicios
                 .filter(ej => ej.dia_semana === diaHoy)
                 .map(ej => ej.nombre);
 
-            entrenoHoy.textContent = ejerciciosHoy.length > 0 ? ejerciciosHoy.join(', ') : 'Descanso';
+            entrenoHoy.textContent = ejerciciosHoy.length > 0 ? `${ejerciciosHoy.length} ejercicios` : 'Descanso';
+
+            if (entrenoHoyLista) {
+                if (ejerciciosHoy.length === 0) {
+                    entrenoHoyLista.innerHTML = '<p class="loading-text">Hoy toca descanso.</p>';
+                } else {
+                    entrenoHoyLista.innerHTML = ejerciciosHoy.map((nombre, index) => {
+                        return `
+                            <div class="entreno-hoy-item">
+                                <span>${index + 1}</span>
+                                <p>${nombre}</p>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
         }
     }
 

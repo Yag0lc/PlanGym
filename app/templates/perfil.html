@@ -14,16 +14,19 @@
 
         <nav>
             <a class="nav-item" href="/principal">Inicio</a>
+            <a class="nav-item" href="/principal#rutinas">Rutinas</a>
+            <a class="nav-item" href="/principal#calendario">Calendario</a>
+            <a class="nav-item" href="/principal#ejercicios">Ejercicios</a>
             <a class="nav-item active" href="/perfil/">Perfil</a>
         </nav>
 
-        <div class="user-box">
-            <div class="avatar">{{ usuario.nombre[0] | upper }}</div>
-            <span>{{ usuario.nombre }}</span>
+        <div class="sidebar-bottom">
+            <div class="user-box">
+                <div class="avatar">{{ usuario.nombre[0] | upper }}</div>
+                <span>{{ usuario.nombre }}</span>
+            </div>
+            <a href="/auth/logout">Cerrar sesion</a>
         </div>
-        <a href="/auth/logout" style="color:#888; font-size:0.85rem; text-align:center; margin-top:8px; display:block;">
-            Cerrar sesion
-        </a>
     </aside>
 
     <main class="main">

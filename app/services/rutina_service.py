@@ -3,7 +3,7 @@ import repositories.rutina_repo as rutina_repo
 DIAS_SEMANA = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
 
 
-def _normalizarEjercicios(ejercicios):
+def limpiarEjercicios(ejercicios):
     if not isinstance(ejercicios, list):
         return []
 
@@ -25,7 +25,7 @@ def _normalizarEjercicios(ejercicios):
 
 
 def crearRutina(nombre, id_usuario, ejercicios):
-    ejercicios = _normalizarEjercicios(ejercicios)
+    ejercicios = limpiarEjercicios(ejercicios)
     if not nombre or len(nombre) < 3 or not ejercicios:
         return None
     return rutina_repo.crearRutina(nombre, id_usuario, ejercicios)
@@ -36,7 +36,7 @@ def obtenerRutinas(id_usuario):
 
 
 def actualizarRutina(id_rutina, id_usuario, nombre, ejercicios):
-    ejercicios = _normalizarEjercicios(ejercicios)
+    ejercicios = limpiarEjercicios(ejercicios)
     if not nombre or len(nombre) < 3 or not ejercicios:
         return None
     return rutina_repo.actualizarRutina(id_rutina, id_usuario, nombre, ejercicios)

@@ -8,6 +8,8 @@ async function cargarCategorias() {
     if (!cont || cont.children.length > 1) return;
 
     const resp = await fetch('/ejercicios/categorias');
+    if (!resp.ok) return;
+
     const cats = await resp.json();
 
     cats.forEach(cat => {
@@ -46,6 +48,11 @@ async function cargarEjercicios() {
         : '/ejercicios/';
 
     const resp = await fetch(url);
+    if (!resp.ok) {
+        grid.innerHTML = '<p class="loading-text">No se pudieron cargar los ejercicios.</p>';
+        return;
+    }
+
     const lista = await resp.json();
 
     grid.innerHTML = '';

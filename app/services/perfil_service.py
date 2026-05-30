@@ -8,12 +8,14 @@ def obtenerPerfil(id_usuario):
 
 
 def actualizarPassword(id_usuario, nueva_password):
+    nueva_password = nueva_password or ""
     if len(nueva_password) < 6:
         return False
     return perfil_repo.cambiarPassword(id_usuario, nueva_password)
 
 
 def actualizarNombre(id_usuario, nuevo_nombre):
+    nuevo_nombre = (nuevo_nombre or "").strip()
     if not nuevo_nombre or len(nuevo_nombre) < 3:
         return False
     return perfil_repo.cambiarNombre(id_usuario, nuevo_nombre)

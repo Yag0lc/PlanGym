@@ -21,11 +21,11 @@ logging.basicConfig(level=logging.INFO)
 app.config['SECRET_KEY'] = "PlanGym-Secret-Key"
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
-app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_USE_SIGNER'] = False
 
 Session(app)
 
-# === CONFIGURACIÓN DE BASE DE DATOS ===
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, '..', 'data', 'plangym.db')
 
@@ -47,18 +47,8 @@ app.register_blueprint(calendario_bp)
 app.register_blueprint(perfil_bp)
 app.register_blueprint(ejercicios_bp)
 
-# === MODELOS ===
-from models.usuario_db import Usuario
 
-# === DECORADOR LOGIN ===
-def login_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'usuario_id' not in session:
-            return redirect(url_for('home'))
-        return f(*args, **kwargs)
-    return decorated
+from models.usuario_db import Usuario
 
 # === RUTAS ===
 @app.route('/')
@@ -68,11 +58,12 @@ def home():
     return render_template('welcome.html')
 
 @app.route('/principal')
-@login_required
 def dashboard():
+    if 'usuario_id' not in session:
+        return redirect(url_for('home'))
+
     return render_template('calendario.html', nombre=session.get('usuario_nombre'))
 
-# === CREAR TABLAS Y ARRANCAR (igual que el proyecto Pokémon) ===
 with app.app_context():
     os.makedirs(os.path.join(BASE_DIR, '..', 'data'), exist_ok=True)
     db.create_all()

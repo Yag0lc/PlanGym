@@ -18,15 +18,16 @@
             <button class="nav-item" onclick="mostrarPagina('rutinas', this)">Rutinas</button>
             <button class="nav-item" onclick="mostrarPagina('calendario', this)">Calendario</button>
             <button class="nav-item" onclick="mostrarPagina('ejercicios', this)">Ejercicios</button>
+            <a class="nav-item" href="/perfil/">Perfil</a>
         </nav>
 
+        <div class="sidebar-bottom">
         <div class="user-box">
             <div class="avatar">{{ nombre[0] | upper }}</div>
             <span>{{ nombre }}</span>
         </div>
-        <a href="/auth/logout" style="color:#888; font-size:0.85rem; text-align:center; margin-top:8px; display:block;">
-            Cerrar sesión
-        </a>
+        <a href="/auth/logout">Cerrar sesion</a>
+        </div>
     </aside>
 
     <main class="main">
@@ -56,6 +57,13 @@
                     <div class="card">
                         <span>Hoy toca</span>
                         <h2 id="entreno-hoy">-</h2>
+                    </div>
+                </div>
+
+                <div class="panel entreno-hoy-panel">
+                    <h3>Entreno de hoy</h3>
+                    <div id="entreno-hoy-lista" class="entreno-hoy-lista">
+                        <p class="loading-text">Cargando...</p>
                     </div>
                 </div>
             </div>
