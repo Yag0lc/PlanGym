@@ -1,5 +1,6 @@
-import requests
+import json
 import time
+import requests
 
 CACHE = {}
 CACHE_TTL = 60
@@ -17,6 +18,41 @@ CATEGORIAS = {
     14: "Hombros",
     9:  "Gluteos",
 }
+
+EJERCICIOS_LOCALES = [
+    {
+        "id": 10001,
+        "nombre": "Press banca",
+        "descripcion": "Ejercicio de pecho con barra o mancuernas.",
+        "categoria_id": 11,
+        "imagen_url": None,
+        "musculos": ["Pecho", "Triceps", "Hombros"],
+    },
+    {
+        "id": 10002,
+        "nombre": "Sentadilla",
+        "descripcion": "Ejercicio principal de pierna.",
+        "categoria_id": 12,
+        "imagen_url": None,
+        "musculos": ["Piernas", "Gluteos"],
+    },
+    {
+        "id": 10003,
+        "nombre": "Jalon al pecho",
+        "descripcion": "Ejercicio de espalda en polea.",
+        "categoria_id": 13,
+        "imagen_url": None,
+        "musculos": ["Espalda", "Biceps"],
+    },
+    {
+        "id": 10004,
+        "nombre": "Curl de biceps",
+        "descripcion": "Ejercicio para trabajar el biceps.",
+        "categoria_id": 8,
+        "imagen_url": None,
+        "musculos": ["Biceps"],
+    },
+]
 
 
 def get_cache(key):
@@ -38,9 +74,9 @@ def fetch_wger(url, params=None):
         return cache_data
 
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
+        respuesta = requests.get(url, params=params, timeout=10)
+        respuesta.raise_for_status()
+        data = respuesta.json()
         set_cache(cache_key, data)
         return data
     except Exception:
@@ -56,7 +92,7 @@ def get_ejercicios(categoria_id=None, pagina=1):
 
     data = fetch_wger(f"{BASE_URL}/exerciseinfo/", params)
     if data is None:
-        return []
+        return get_ejercicios_locales(categoria_id)
 
     ejercicios = []
     for ej in data.get("results", []):
@@ -68,7 +104,7 @@ def get_ejercicios(categoria_id=None, pagina=1):
 def get_ejercicio_id(ejercicio_id):
     data = fetch_wger(f"{BASE_URL}/exerciseinfo/{ejercicio_id}/?format=json")
     if data is None:
-        return None
+        return get_ejercicio_local_id(ejercicio_id)
 
     return adaptar_ejercicio_detalle(data)
 
@@ -90,7 +126,7 @@ def adaptar_ejercicio(data, categoria_id=None):
         "id": data.get("id"),
         "nombre": traduccion.get("name") or "Sin nombre",
         "descripcion": descripcion,
-        "categoria": CATEGORIAS.get(categoria_id, "General"),
+        "categoria": CATEGORIAS.get(categoria_id, obtener_categoria(data)),
         "imagen_url": obtener_imagen(data),
     }
 
@@ -110,7 +146,7 @@ def adaptar_ejercicio_detalle(data):
 
 
 def obtener_traduccion(data):
-    traducciones = data.get("translations") or []
+    traducciones = data.get("translations")
 
     for traduccion in traducciones:
         if traduccion.get("language") == IDIOMA_ESPANOL:
@@ -165,4 +201,40 @@ def limpiar_descripcion(descripcion):
     descripcion = descripcion.replace("<p>", "").replace("</p>", " ")
     descripcion = descripcion.replace("<br>", " ").replace("<br/>", " ")
     descripcion = descripcion.replace("<br />", " ")
+    descripcion = descripcion.replace("<ol>", "").replace("</ol>", " ")
+    descripcion = descripcion.replace("<ul>", "").replace("</ul>", " ")
+    descripcion = descripcion.replace("<li>", "- ").replace("</li>", " ")
+    descripcion = descripcion.replace("\u200b", "")
     return descripcion.strip()
+
+
+def get_ejercicios_locales(categoria_id=None):
+    ejercicios = EJERCICIOS_LOCALES
+    if categoria_id:
+        ejercicios = [ej for ej in ejercicios if ej["categoria_id"] == categoria_id]
+
+    return [
+        {
+            "id": ej["id"],
+            "nombre": ej["nombre"],
+            "descripcion": ej["descripcion"],
+            "categoria": CATEGORIAS.get(ej["categoria_id"], "General"),
+            "imagen_url": ej["imagen_url"],
+        }
+        for ej in ejercicios
+    ]
+
+
+def get_ejercicio_local_id(ejercicio_id):
+    for ej in EJERCICIOS_LOCALES:
+        if ej["id"] == ejercicio_id:
+            return {
+                "id": ej["id"],
+                "nombre": ej["nombre"],
+                "descripcion": ej["descripcion"],
+                "categoria": CATEGORIAS.get(ej["categoria_id"], "General"),
+                "imagen_url": ej["imagen_url"],
+                "musculos": ej["musculos"],
+            }
+
+    return None
