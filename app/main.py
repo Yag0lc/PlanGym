@@ -13,11 +13,10 @@ from routes.calendario_routes import calendario_bp
 from routes.ejercicios_routes import ejercicios_bp
 
 
-
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# === CONFIGURACIÓN DE SESIÓN ===
+
 app.config['SECRET_KEY'] = "PlanGym-Secret-Key"
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
@@ -39,7 +38,7 @@ db.init_app(app)
 def registrar_peticion():
     app.logger.info("%s %s", request.method, request.path)
 
-# === BLUEPRINTS ===
+
 from routes.auth import auth_bp
 app.register_blueprint(auth_bp)
 app.register_blueprint(rutinas_bp)
@@ -48,9 +47,9 @@ app.register_blueprint(perfil_bp)
 app.register_blueprint(ejercicios_bp)
 
 
-from models.usuario_db import Usuario
 
-# === RUTAS ===
+
+
 @app.route('/')
 def home():
     if 'usuario_id' in session:
@@ -61,21 +60,11 @@ def home():
 def dashboard():
     if 'usuario_id' not in session:
         return redirect(url_for('home'))
-
     return render_template('calendario.html', nombre=session.get('usuario_nombre'))
 
 with app.app_context():
     os.makedirs(os.path.join(BASE_DIR, '..', 'data'), exist_ok=True)
     db.create_all()
-
-    columnas = db.session.execute(db.text("PRAGMA table_info(rutina_ejercicios)")).fetchall()
-    nombres_columnas = [columna[1] for columna in columnas]
-    if "dia_semana" not in nombres_columnas:
-        db.session.execute(db.text(
-            "ALTER TABLE rutina_ejercicios ADD COLUMN dia_semana VARCHAR(20) NOT NULL DEFAULT 'lunes'"
-        ))
-        db.session.commit()
-
     print("Base de datos lista.")
 
 
