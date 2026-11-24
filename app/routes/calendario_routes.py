@@ -1,5 +1,5 @@
 from flask import Blueprint, session, jsonify, request
-from services.calendario_service import obtenerDias, marcarDia, desmarcarDia
+from services.calendario_service import obtenerDias, marcarDia, desmarcarDia, obtenerEstados
 
 calendario_bp = Blueprint('calendario_bp', __name__, url_prefix='/calendario')
 
@@ -15,6 +15,19 @@ def listar():
     if dias is None:
         return jsonify({'error': 'Fecha invalida'}), 400
     return jsonify(dias)
+
+
+@calendario_bp.route('/estado', methods=['GET'])
+def listar_estados():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
+    mes = request.args.get('mes', type=int)
+    anio = request.args.get('anio', type=int)
+    estados = obtenerEstados(session['usuario_id'], mes, anio)
+    if estados is None:
+        return jsonify({'error': 'Fecha invalida'}), 400
+    return jsonify(estados)
 
 
 @calendario_bp.route('/marcar', methods=['POST'])

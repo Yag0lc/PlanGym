@@ -11,6 +11,7 @@ const nombresDias = [
 ];
 
 let diasCompletados = [];
+let estadosDias = {};
 let diaSeleccionado = null;
 
 const hoy = new Date();
@@ -29,8 +30,12 @@ function mostrarFechaActual() {
 }
 
 async function cargarDiasCompletados() {
-    const resp = await fetch(`/calendario/?mes=${mesActual}&anio=${anoActual}`);
-    diasCompletados = await resp.json();
+    const [respDias, respEstados] = await Promise.all([
+        fetch(`/calendario/?mes=${mesActual}&anio=${anoActual}`),
+        fetch(`/calendario/estado?mes=${mesActual}&anio=${anoActual}`)
+    ]);
+    diasCompletados = respDias.ok ? await respDias.json() : [];
+    estadosDias = respEstados.ok ? await respEstados.json() : {};
 
     generarCalendario();
     await actualizarRacha();
@@ -39,7 +44,7 @@ async function cargarDiasCompletados() {
 async function marcarDiaCompletado() {
     if (!diaSeleccionado) return;
 
-    const endpoint = diasCompletados.includes(diaSeleccionado)
+    const endpoint = estadosDias[diaSeleccionado] === 'completado'
         ? '/calendario/desmarcar'
         : '/calendario/marcar';
 
@@ -155,6 +160,10 @@ function generarCalendario() {
 
         if (diasCompletados.includes(i)) {
             day.classList.add('completed');
+        }
+
+        if (estadosDias[i] === 'pendiente') {
+            day.classList.add('pending');
         }
 
         if (i === diaSeleccionado) {

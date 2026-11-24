@@ -7,7 +7,7 @@ sys.path.insert(0, str(APP_DIR))
 
 from services.calendario_service import validarFecha, validarMesAnio
 from services.perfil_service import actualizarNombre, actualizarPassword
-from services.rutina_service import limpiarEjercicios
+from services.rutina_service import limpiarEjercicios, guardarRegistroEjercicio
 from client.wger import limpiar_descripcion, get_ejercicios_locales, get_ejercicio_local_id
 
 
@@ -45,6 +45,19 @@ class RutinaServiceTest(unittest.TestCase):
             {"nombre": "Press banca", "dia_semana": "martes"},
             {"nombre": "Remo", "dia_semana": "lunes"}
         ])
+
+    def test_normalizar_ejercicios_permite_repetir_ejercicio_en_dias_distintos(self):
+        ejercicios = limpiarEjercicios([
+            {"nombre": "Sentadilla", "dia_semana": "lunes"},
+            {"nombre": "Sentadilla", "dia_semana": "jueves"}
+        ])
+        self.assertEqual(len(ejercicios), 2)
+
+    def test_registro_rechaza_valores_fuera_de_rango(self):
+        self.assertIsNone(guardarRegistroEjercicio(1, 2, "2026-09-15", 0, 10, 20))
+
+    def test_registro_rechaza_fecha_invalida(self):
+        self.assertIsNone(guardarRegistroEjercicio(1, 2, "15/09/2026", 3, 10, 20))
 
 
 class PerfilServiceTest(unittest.TestCase):

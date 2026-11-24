@@ -5,6 +5,8 @@ from services.rutina_service import (
     actualizarRutina,
     activarRutina,
     eliminarRutina,
+    guardarRegistroEjercicio,
+    obtenerRegistrosEjercicio,
 )
 
 rutinas_bp = Blueprint('rutinas_bp', __name__, url_prefix='/rutinas')
@@ -17,6 +19,7 @@ def rutinaAJson(rutina):
         'activa': rutina.activa,
         'ejercicios': [
             {
+                'id': e.id,
                 'nombre': e.nombre,
                 'dia_semana': e.dia_semana
             }
@@ -91,3 +94,34 @@ def eliminar(id_rutina):
     if resultado:
         return jsonify({'ok': True})
     return jsonify({'error': 'Rutina no encontrada'}), 404
+
+
+@rutinas_bp.route('/registros', methods=['GET'])
+def listar_registros():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
+    fecha = request.args.get('fecha')
+    registros = obtenerRegistrosEjercicio(session['usuario_id'], fecha)
+    if registros is None:
+        return jsonify({'error': 'Fecha invalida'}), 400
+    return jsonify({str(id_ejercicio): {
+        'series': registro.series,
+        'repeticiones': registro.repeticiones,
+        'peso': registro.peso
+    } for id_ejercicio, registro in registros.items()})
+
+
+@rutinas_bp.route('/registros', methods=['POST'])
+def guardar_registro():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
+    datos = request.get_json(silent=True) or {}
+    registro = guardarRegistroEjercicio(
+        session['usuario_id'], datos.get('id_ejercicio'), datos.get('fecha'),
+        datos.get('series'), datos.get('repeticiones'), datos.get('peso')
+    )
+    if registro is None:
+        return jsonify({'error': 'Datos invalidos'}), 400
+    return jsonify({'ok': True})

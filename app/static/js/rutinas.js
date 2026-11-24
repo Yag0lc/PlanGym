@@ -5,6 +5,10 @@ let rutinaEditandoId = null;
 let ejerciciosParaRutina = cargarEjerciciosParaRutina();
 const diasSemana = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
 
+function crearClaveEjercicio() {
+    return `ejercicio-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 function cargarEjerciciosParaRutina() {
     const datos = localStorage.getItem('plangym_ejercicios_rutina');
     const ejercicios = datos ? JSON.parse(datos) : [];
@@ -19,13 +23,16 @@ function normalizarEjercicioRutina(ejercicio) {
     if (typeof ejercicio === 'string') {
         return {
             nombre: ejercicio,
-            dia_semana: 'lunes'
+            dia_semana: 'lunes',
+            clave: crearClaveEjercicio()
         };
     }
 
     return {
+        id: ejercicio.id,
         nombre: ejercicio.nombre || '',
-        dia_semana: diasSemana.includes(ejercicio.dia_semana) ? ejercicio.dia_semana : 'lunes'
+        dia_semana: diasSemana.includes(ejercicio.dia_semana) ? ejercicio.dia_semana : 'lunes',
+        clave: ejercicio.clave || crearClaveEjercicio()
     };
 }
 
@@ -39,7 +46,8 @@ function cambiarEjercicioParaRutina(nombre) {
     } else {
         ejerciciosParaRutina.push({
             nombre,
-            dia_semana: 'lunes'
+            dia_semana: 'lunes',
+            clave: crearClaveEjercicio()
         });
     }
 
@@ -51,9 +59,9 @@ function cambiarEjercicioParaRutina(nombre) {
     }
 }
 
-function cambiarDiaEjercicio(nombre, dia) {
+function cambiarDiaEjercicio(clave, dia) {
     ejerciciosParaRutina = ejerciciosParaRutina.map(ej => {
-        if (ej.nombre === nombre) {
+        if (ej.clave === clave) {
             return {
                 nombre: ej.nombre,
                 dia_semana: dia
@@ -64,6 +72,19 @@ function cambiarDiaEjercicio(nombre, dia) {
     });
 
     guardarEjerciciosParaRutina();
+}
+
+function quitarEjercicioParaRutina(clave) {
+    ejerciciosParaRutina = ejerciciosParaRutina.filter(ej => ej.clave !== clave);
+    guardarEjerciciosParaRutina();
+    renderEjerciciosSelector();
+    if (typeof cargarEjercicios === 'function') cargarEjercicios();
+}
+
+function agregarOtroDia(nombre) {
+    ejerciciosParaRutina.push({ nombre, dia_semana: 'lunes', clave: crearClaveEjercicio() });
+    guardarEjerciciosParaRutina();
+    renderEjerciciosSelector();
 }
 
 async function cargarRutinas() {
@@ -172,18 +193,14 @@ async function guardarRutina(id) {
 }
 
 function renderEditorRutina(rutina) {
-    const opciones = [];
-
-    [...rutina.ejercicios, ...ejerciciosParaRutina].forEach(ejercicio => {
-        if (!opciones.some(ej => ej.nombre === ejercicio.nombre)) {
-            opciones.push(ejercicio);
-        }
+    const opciones = [...rutina.ejercicios];
+    ejerciciosParaRutina.forEach(ejercicio => {
+        if (!opciones.some(ej => ej.nombre === ejercicio.nombre)) opciones.push(ejercicio);
     });
 
     const chips = opciones.map(ej => {
-        const ejercicioRutina = rutina.ejercicios.find(item => item.nombre === ej.nombre);
-        const selected = ejercicioRutina ? 'selected' : '';
-        const dia = ejercicioRutina ? ejercicioRutina.dia_semana : ej.dia_semana;
+        const selected = rutina.ejercicios.includes(ej) ? 'selected' : '';
+        const dia = ej.dia_semana;
         const opcionesDias = diasSemana.map(diaSemana => {
             const marcado = diaSemana === dia ? 'selected' : '';
             return `<option value="${diaSemana}" ${marcado}>${diaSemana}</option>`;
@@ -315,8 +332,7 @@ async function actualizarEstadisticasInicio() {
         } else {
             const diaHoy = obtenerDiaHoy();
             const ejerciciosHoy = activa.ejercicios
-                .filter(ej => ej.dia_semana === diaHoy)
-                .map(ej => ej.nombre);
+                .filter(ej => ej.dia_semana === diaHoy);
 
             entrenoHoy.textContent = ejerciciosHoy.length > 0 ? `${ejerciciosHoy.length} ejercicios` : 'Descanso';
 
@@ -324,11 +340,22 @@ async function actualizarEstadisticasInicio() {
                 if (ejerciciosHoy.length === 0) {
                     entrenoHoyLista.innerHTML = '<p class="loading-text">Hoy toca descanso.</p>';
                 } else {
-                    entrenoHoyLista.innerHTML = ejerciciosHoy.map((nombre, index) => {
+                    const fechaHoy = obtenerFechaLocal();
+                    const registros = await cargarRegistrosHoy(fechaHoy);
+                    entrenoHoyLista.innerHTML = ejerciciosHoy.map((ejercicio, index) => {
+                        const registro = registros[ejercicio.id] || { series: '', repeticiones: '', peso: '' };
                         return `
-                            <div class="entreno-hoy-item">
+                            <div class="entreno-hoy-item" data-ejercicio-id="${ejercicio.id}">
                                 <span>${index + 1}</span>
-                                <p>${nombre}</p>
+                                <div class="entreno-hoy-content">
+                                    <p>${ejercicio.nombre}</p>
+                                    <div class="registro-inputs">
+                                        <label>Series<input type="number" min="1" max="50" value="${registro.series}"></label>
+                                        <label>Repeticiones<input type="number" min="1" max="500" value="${registro.repeticiones}"></label>
+                                        <label>Peso (kg)<input type="number" min="0" max="1000" step="0.5" value="${registro.peso}"></label>
+                                    </div>
+                                    <button class="guardar-registro-btn" onclick="guardarRegistroHoy(${ejercicio.id}, this)">Guardar</button>
+                                </div>
                             </div>
                         `;
                     }).join('');
@@ -341,6 +368,59 @@ async function actualizarEstadisticasInicio() {
     const dias = await resp.json();
 
     document.getElementById('total-dias').textContent = dias.length;
+}
+
+async function cargarRegistrosHoy(fecha) {
+    const resp = await fetch(`/rutinas/registros?fecha=${fecha}`);
+    return resp.ok ? await resp.json() : {};
+}
+
+async function guardarRegistroHoy(idEjercicio, boton) {
+    const tarjeta = boton.closest('.entreno-hoy-item');
+    const valores = tarjeta.querySelectorAll('input');
+    const [series, repeticiones, peso] = [...valores].map(input => input.value);
+    const fecha = obtenerFechaLocal();
+
+    if (!series || !repeticiones || peso === '') {
+        boton.textContent = 'Completa los datos';
+        return;
+    }
+
+    boton.disabled = true;
+    const resp = await fetch('/rutinas/registros', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            id_ejercicio: idEjercicio,
+            fecha,
+            series,
+            repeticiones,
+            peso
+        })
+    });
+    boton.disabled = false;
+    boton.textContent = resp.ok ? 'Guardado' : 'No se pudo guardar';
+}
+
+function obtenerFechaLocal() {
+    const fecha = new Date();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${fecha.getFullYear()}-${mes}-${dia}`;
+}
+
+async function completarEntrenamientoHoy() {
+    const fecha = new Date();
+    const resp = await fetch('/calendario/marcar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            dia: fecha.getDate(), mes: fecha.getMonth() + 1, anio: fecha.getFullYear()
+        })
+    });
+    const boton = document.getElementById('completar-entrenamiento-btn');
+    boton.textContent = resp.ok ? 'Entrenamiento completado' : 'No se pudo completar';
+    if (resp.ok && typeof cargarDiasCompletados === 'function') await cargarDiasCompletados();
 }
 
 function renderEjerciciosSelector() {
@@ -364,14 +444,16 @@ function renderEjerciciosSelector() {
         fila.innerHTML = `
             <button class="secondary">${ej.nombre}</button>
             <select class="day-select">${opcionesDias}</select>
+            <button class="secondary add-day-btn">Otro día</button>
         `;
 
         fila.querySelector('button').onclick = () => {
-            cambiarEjercicioParaRutina(ej.nombre);
+            quitarEjercicioParaRutina(ej.clave);
         };
         fila.querySelector('select').onchange = evento => {
-            cambiarDiaEjercicio(ej.nombre, evento.target.value);
+            cambiarDiaEjercicio(ej.clave, evento.target.value);
         };
+        fila.querySelector('.add-day-btn').onclick = () => agregarOtroDia(ej.nombre);
 
         cont.appendChild(fila);
     });

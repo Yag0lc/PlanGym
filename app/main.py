@@ -6,9 +6,9 @@ from database.db import db
 from routes.perfil_routes import perfil_bp
 from models.usuario_db import Usuario
 from models.rutina_db import Rutina
-from models.ejercicio_db import RutinaEjercicio
+from models.ejercicio_db import RutinaEjercicio, RegistroEjercicio
 from routes.rutinas_routes import rutinas_bp
-from models.calendario_db import DiaCompletado
+from models.calendario_db import DiaCompletado, DiaDescartado
 from routes.calendario_routes import calendario_bp
 from routes.ejercicios_routes import ejercicios_bp
 

@@ -1,3 +1,4 @@
+from datetime import date
 import repositories.rutina_repo as rutina_repo
 
 DIAS_SEMANA = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
@@ -48,3 +49,29 @@ def activarRutina(id_rutina, id_usuario):
 
 def eliminarRutina(id_rutina, id_usuario):
     return rutina_repo.eliminarRutina(id_rutina, id_usuario)
+
+
+def guardarRegistroEjercicio(id_usuario, id_rutina_ejercicio, fecha, series, repeticiones, peso):
+    if not isinstance(id_rutina_ejercicio, int) or not isinstance(fecha, str):
+        return None
+    try:
+        date.fromisoformat(fecha)
+        series = int(series)
+        repeticiones = int(repeticiones)
+        peso = float(peso)
+    except (TypeError, ValueError):
+        return None
+
+    if series < 1 or series > 50 or repeticiones < 1 or repeticiones > 500 or peso < 0 or peso > 1000:
+        return None
+    return rutina_repo.guardarRegistro(
+        id_usuario, id_rutina_ejercicio, fecha, series, repeticiones, peso
+    )
+
+
+def obtenerRegistrosEjercicio(id_usuario, fecha):
+    try:
+        date.fromisoformat(fecha)
+    except (TypeError, ValueError):
+        return None
+    return rutina_repo.obtenerRegistrosPorFecha(id_usuario, fecha)

@@ -1,0 +1,44 @@
+Normalización
+Primera Forma Normal (1FN)
+
+La base de datos cumple la Primera Forma Normal porque todos los atributos almacenan valores atómicos y no existen grupos repetidos dentro de una misma tabla.
+
+Por ejemplo, cada ejercicio de una rutina se almacena como un registro independiente en la tabla rutina_ejercicios.
+
+Segunda Forma Normal (2FN)
+
+La base de datos cumple la Segunda Forma Normal porque todas las tablas poseen una clave primaria simple (id) y todos los atributos dependen completamente de dicha clave.
+
+No existen dependencias parciales.
+
+Tercera Forma Normal (3FN)
+
+La base de datos cumple la Tercera Forma Normal porque no existen dependencias transitivas entre atributos no clave.
+
+Los datos de usuarios, rutinas, ejercicios y días completados se encuentran separados en tablas diferentes y relacionados mediante claves foráneas.
+
+Por tanto, la base de datos se considera normalizada hasta 3FN.
+
+Tabla usuarios
+Campo	Tipo	Restricción
+id	INTEGER	PK
+nombre	VARCHAR	NOT NULL
+email	VARCHAR	UNIQUE
+password	VARCHAR	NOT NULL
+Tabla rutinas
+Campo	Tipo	Restricción
+id	INTEGER	PK
+nombre	VARCHAR	NOT NULL
+activa	BOOLEAN	NOT NULL
+usuario_id	INTEGER	FK
+Tabla rutina_ejercicios
+Campo	Tipo	Restricción
+id	INTEGER	PK
+nombre	VARCHAR	NOT NULL
+dia_semana	VARCHAR	NOT NULL
+rutina_id	INTEGER	FK
+Tabla dias_completados
+Campo	Tipo	Restricción
+id	INTEGER	PK
+fecha	DATE	NOT NULL
+usuario_id	INTEGER	FK

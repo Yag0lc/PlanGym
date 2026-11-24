@@ -1,6 +1,6 @@
 from database.db import db
 from models.rutina_db import Rutina
-from models.ejercicio_db import RutinaEjercicio
+from models.ejercicio_db import RutinaEjercicio, RegistroEjercicio
 
 
 def crearRutina(nombre, id_usuario, ejercicios):
@@ -72,3 +72,42 @@ def eliminarRutina(id_rutina, id_usuario):
         db.session.commit()
         return True
     return False
+
+
+def guardarRegistro(id_usuario, id_rutina_ejercicio, fecha, series, repeticiones, peso):
+    ejercicio = RutinaEjercicio.query.join(Rutina).filter(
+        RutinaEjercicio.id == id_rutina_ejercicio,
+        Rutina.id_usuario == id_usuario
+    ).first()
+    if not ejercicio:
+        return None
+
+    registro = RegistroEjercicio.query.filter_by(
+        id_usuario=id_usuario,
+        id_rutina_ejercicio=id_rutina_ejercicio,
+        fecha=fecha
+    ).first()
+    if not registro:
+        registro = RegistroEjercicio(
+            id_usuario=id_usuario,
+            id_rutina_ejercicio=id_rutina_ejercicio,
+            fecha=fecha,
+            series=series,
+            repeticiones=repeticiones,
+            peso=peso
+        )
+        db.session.add(registro)
+    else:
+        registro.series = series
+        registro.repeticiones = repeticiones
+        registro.peso = peso
+
+    db.session.commit()
+    return registro
+
+
+def obtenerRegistrosPorFecha(id_usuario, fecha):
+    registros = RegistroEjercicio.query.filter_by(
+        id_usuario=id_usuario, fecha=fecha
+    ).all()
+    return {registro.id_rutina_ejercicio: registro for registro in registros}

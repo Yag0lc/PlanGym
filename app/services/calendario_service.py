@@ -46,3 +46,9 @@ def desmarcarDia(id_usuario, dia, mes, anio):
     if not validarFecha(dia, mes, anio):
         return None
     return calendario_repo.desmarcarDia(id_usuario, dia, mes, anio)
+
+
+def obtenerEstados(id_usuario, mes, anio):
+    if not validarMesAnio(mes, anio):
+        return None
+    return calendario_repo.obtenerEstadosCalendario(id_usuario, mes, anio)
